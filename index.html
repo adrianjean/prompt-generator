@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VEO3 Prompt Generator - Final Version</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #f0f2f5; }
+        .container-fluid { max-width: 90%; }
+        .form-section {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e9ecef;
+        }
+        h1, h2 { font-weight: 700; }
+        h2 {
+            border-bottom: 2px solid #0d6efd;
+            padding-bottom: 10px;
+            margin-bottom: 25px;
+            font-size: 1.75rem;
+            display: flex;
+            align-items: center;
+        }
+        h2 .bi { margin-right: 12px; font-size: 1.5rem; }
+        .form-label { font-weight: 600; color: #495057; }
+        #final-prompt-container { position: sticky; top: 20px; }
+        .scene-block {
+            border: 1px dashed #6c757d;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            position: relative;
+        }
+        .character-block {
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 6px;
+            background-color: #f8f9fa;
+            position: relative;
+        }
+        .scene-header { font-weight: bold; margin-bottom: 15px; }
+        .delete-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid my-5">
+        <div class="text-center mb-5">
+            <h1><i class="bi bi-magic"></i> AI Video/Image Prompt Generator</h1>
+            <p class="lead text-muted">The ultimate tool for crafting detailed, multi-scene video prompts.</p>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-8">
+                <form id="veo3-prompt-form" onsubmit="return false;">
+                    <div id="storyboard-container" class="form-section">
+                        <h2><i class="bi bi-film"></i> Storyboard</h2>
+                        </div>
+                    <button type="button" class="btn btn-primary w-100 mb-4" id="add-scene"><i class="bi bi-plus-circle-fill me-2"></i>Add Scene to Storyboard</button>
+
+                    <div class="form-section">
+                        <h2><i class="bi bi-slash-circle"></i> Exclusions (Negative Prompt)</h2>
+                        <div class="mb-3">
+                            <label for="negative-prompt" class="form-label">Elements to Exclude from all scenes</label>
+                            <textarea class="form-control" id="negative-prompt" rows="2" placeholder="e.g., text, watermarks, blurry, oversaturated"></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="col-lg-4">
+                <div id="final-prompt-container">
+                    <div class="form-section">
+                        <h2><i class="bi bi-clipboard-check"></i> Final Prompt</h2>
+                        <div class="d-grid gap-2 mb-3">
+                        </div>
+                        <textarea class="form-control" id="final-prompt" rows="20" readonly></textarea>
+                        <button type="button" class="btn btn-success mt-3 w-100" id="copy-prompt"><i class="bi bi-clipboard-plus me-2"></i>Copy Prompt</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <template id="scene-template">
+        <div class="scene-block">
+            <button type="button" class="delete-btn delete-scene"><i class="bi bi-x-circle text-danger"></i></button>
+            <div class="scene-header">Scene #</div>
+            <div class="row">
+                <div class="col-12 mb-3">
+                    <label class="form-label">Overall Scene Description</label>
+                    <textarea class="form-control scene-description" rows="2" placeholder="e.g., A bustling futuristic city at night, rain-streaked streets. A serene enchanted forest."></textarea>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Visual Style</label>
+                    <select class="form-select visual-style">
+                        <option value="">-- Select --</option>
+                        <option value="Photorealistic">Photorealistic</option><option value="Cinematic">Cinematic</option><option value="Anime">Anime</option><option value="Claymation">Claymation</option><option value="Documentary style">Documentary</option><option value="in the style of Wes Anderson">Wes Anderson</option><option value="in the style of Hayao Miyazaki">Miyazaki</option>
+                        <option value="Selfie style">Selfie style shot</option>
+                        <option value="Selfie style, with arm holding camera visible off to the left of the frame">Selfie style shot, with arm visible</option>
+
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Shot Framing</label>
+                     <select class="form-select shot-framing"><option value="">-- Select --</option><option value="Wide shot">Wide shot</option><option value="Medium shot">Medium shot</option><option value="Close-up">Close-up</option><option value="Extreme close-up">Extreme close-up</option></select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Camera Movement</label>
+                    <select class="form-select camera-movement">
+                        <option value="">-- Select --</option>
+                        <option value="Static shot">Static shot</option>
+                        <option value="Pan left">Pan left</option>
+                        <option value="Pan right">Pan right</option>
+                        <option value="Tilt up">Tilt up</option>
+                        <option value="Tilt down">Tilt down</option>
+                        <option value="Dolly in">Dolly in</option>
+                        <option value="Dolly out">Dolly out</option>
+                        <option value="Zoom in">Zoom in</option>
+                        <option value="Zoom out">Zoom out</option>
+                        <option value="Aerial shot">Aerial shot</option>
+                        <option value="Tracking shot">Tracking shot</option>
+                        <option value="Drone shot">Drone shot</option>
+                        <option value="Crane shot">Crane shot</option>
+                        <option value="Handheld shot">Handheld shot</option>
+                        <option value="Over-the-shoulder shot">Over-the-shoulder shot</option>
+                        <option value="Slow motion">Slow motion</option>
+                        <option value="Timelapse">Timelapse</option>
+                        </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Lighting</label>
+                    <input type="text" class="form-control lighting" placeholder="e.g., Golden hour, neon glow">
+                </div>
+                 <div class="col-12">
+                    <label class="form-label">Characters</label>
+                    <div class="characters-container"></div>
+                    <button type="button" class="btn btn-outline-primary btn-sm mt-2 add-character-btn"><i class="bi bi-person-plus-fill me-1"></i>Add Character</button>
+                </div>
+                <div class="col-12 mt-3">
+                    <label class="form-label">Dialogue</label>
+                    <div class="dialogue-container"></div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm mt-2 add-dialogue-btn">
+                        <i class="bi bi-chat-left-text-fill me-1"></i>Add Dialogue Line
+                    </button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+
+    <template id="character-template">
+        <div class="character-block">
+            <button type="button" class="delete-btn delete-character"><i class="bi bi-trash3 text-muted"></i></button>
+            <div class="row">
+                <div class="col-md-6 mb-2">
+                    <label class="form-label">Character Name</label>
+                    <input type="text" class="form-control character-name" placeholder="Character">
+                </div>
+                <div class="col-md-6 mb-2">
+                    <label class="form-label">Character Description</label>
+                    <input type="text" class="form-control character-description" placeholder="e.g., grizzled old detective, curious young girl">
+                </div>
+                <div class="col-md-6 mb-2">
+                    <label class="form-label">Character Action</label>
+                    <input type="text" class="form-control character-action" placeholder="e.g., looking around suspiciously, laughing">
+                </div>
+            </div>
+        </div>
+    </template>
+
+
+    <template id="dialogue-template">
+        <div class="character-block">
+            <button type="button" class="delete-btn delete-dialogue"><i class="bi bi-trash3 text-muted"></i></button>
+            <div class="row">
+                <div class="col-md-4 mb-2">
+                    <label class="form-label">Character</label>
+                    <input type="text" class="form-control dialogue-character" placeholder="e.g., Character 1">
+                </div>
+                <div class="col-md-5 mb-2">
+                    <label class="form-label">Dialogue</label>
+                    <input type="text" class="form-control dialogue-line" placeholder="e.g., We must move now!">
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label class="form-label">Tone</label>
+                    <input type="text" class="form-control dialogue-tone" placeholder="e.g., urgent">
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const storyboardContainer = document.getElementById('storyboard-container');
+            const sceneTemplate = document.getElementById('scene-template');
+            const characterTemplate = document.getElementById('character-template');
+            const dialogueTemplate = document.getElementById('dialogue-template');
+            const finalPrompt = document.getElementById('final-prompt');
+            // const importModal = new bootstrap.Modal(document.getElementById('importModal'));
+            let sceneCount = 0;
+
+            // --- Core Functions ---
+            function updatePrompt() {
+                let fullPrompt = '';
+                const scenes = storyboardContainer.querySelectorAll('.scene-block');
+                scenes.forEach((scene, index) => {
+                    let scenePrompt = '';
+                    const sceneDesc = scene.querySelector('.scene-description').value.trim();
+                    const visualStyle = scene.querySelector('.visual-style').value;
+                    const shotFraming = scene.querySelector('.shot-framing').value;
+                    const cameraMovement = scene.querySelector('.camera-movement').value;
+                    const lighting = scene.querySelector('.lighting').value.trim();
+                    
+                    if (visualStyle) scenePrompt += `${visualStyle}. `;
+                    if (sceneDesc) scenePrompt += `${sceneDesc}. `;
+                    scenePrompt += `${shotFraming || 'Medium shot'}. `;
+
+                    // Characters
+                    const characters = scene.querySelectorAll('.characters-container .character-block');
+                    characters.forEach(char => {
+                        const name = char.querySelector('.character-name')?.value.trim();
+                        const desc = char.querySelector('.character-description').value.trim();
+                        const action = char.querySelector('.character-action').value.trim();
+
+                        if (name) scenePrompt += `${name}: ${desc}. `;
+                        if (action) scenePrompt += `${name} Action: ${action}. `;
+                    });
+
+                    // Dialogue
+                    const dialogues = scene.querySelectorAll('.dialogue-container .character-block');
+                    dialogues.forEach(dialogue => {
+                        const charName = dialogue.querySelector('.dialogue-character').value.trim();
+                        const line = dialogue.querySelector('.dialogue-line').value.trim();
+                        const tone = dialogue.querySelector('.dialogue-tone').value.trim();
+                        if (charName && line) {
+                            scenePrompt += `Dialogue: ${charName} says "${line}"${tone ? ' in a ' + tone + ' tone' : ''}. `;
+                        }
+                    });
+
+                    if (cameraMovement) scenePrompt += `Camera: ${cameraMovement}. `;
+                    if (lighting) scenePrompt += `Lighting: ${lighting}. `;
+                    
+                    if (scenes.length > 1) {
+                         fullPrompt += `Scene ${index + 1}: ${scenePrompt.trim()}`
+                         if (index < scenes.length - 1) fullPrompt += " Then, ";
+                    } else {
+                        fullPrompt += scenePrompt.trim();
+                    }
+                });
+
+                const negativePrompt = document.getElementById('negative-prompt').value.trim();
+                if (negativePrompt) {
+                    fullPrompt += ` --no ${negativePrompt}`;
+                }
+                finalPrompt.value = fullPrompt.trim();
+            }
+
+            function addScene(sceneData = {}) {
+                const newScene = sceneTemplate.content.cloneNode(true);
+                newScene.querySelector('.scene-description').value = sceneData.description || '';
+                newScene.querySelector('.visual-style').value = sceneData.visualStyle || '';
+                newScene.querySelector('.shot-framing').value = sceneData.shotFraming || '';
+                newScene.querySelector('.camera-movement').value = sceneData.cameraMovement || '';
+                newScene.querySelector('.lighting').value = sceneData.lighting || '';
+                
+                const charactersContainer = newScene.querySelector('.characters-container');
+                if (sceneData.characters && sceneData.characters.length) {
+                    sceneData.characters.forEach(charData => {
+                        const newCharacter = characterTemplate.content.cloneNode(true);
+                        newCharacter.querySelector('.character-description').value = charData.description || '';
+                        newCharacter.querySelector('.character-action').value = charData.action || '';
+                        charactersContainer.appendChild(newCharacter);
+                    });
+                }
+                storyboardContainer.appendChild(newScene);
+                updateSceneNumbers();
+            }
+            
+            function updateSceneNumbers() {
+                 const scenes = storyboardContainer.querySelectorAll('.scene-block');
+                 scenes.forEach((scene, index) => {
+                     scene.querySelector('.scene-header').textContent = `Scene #${index + 1}`;
+                 });
+            }
+
+            function getFormState() { /* ... function to get state for saving ... */ return {}; }
+            function loadFormState(state) { /* ... function to load state ... */ }
+
+            // --- Event Listeners ---
+            document.getElementById('add-scene').addEventListener('click', () => addScene());
+            storyboardContainer.addEventListener('input', updatePrompt);
+
+            storyboardContainer.addEventListener('click', function(e) {
+                // Add Character Button
+                if (e.target.classList.contains('add-character-btn')) {
+                    const charactersContainer = e.target.previousElementSibling;
+                    const characterBlocks = charactersContainer.querySelectorAll('.character-block');
+                    const charNum = characterBlocks.length + 1;
+
+                    const newCharacter = characterTemplate.content.cloneNode(true);
+                    newCharacter.querySelector('.character-name').value = `Character ${charNum}`;
+
+                    charactersContainer.appendChild(newCharacter);
+                    updatePrompt();
+                }
+                // Add Dialogue Line
+                if (e.target.classList.contains('add-dialogue-btn')) {
+                    const dialogueContainer = e.target.previousElementSibling;
+                    const newDialogue = dialogueTemplate.content.cloneNode(true);
+                    dialogueContainer.appendChild(newDialogue);
+                    updatePrompt();
+                }
+                // Delete Scene Button
+                if (e.target.closest('.delete-scene')) {
+                    e.target.closest('.scene-block').remove();
+                    updateSceneNumbers();
+                    updatePrompt();
+                }
+                // Delete Character Button
+                if (e.target.closest('.delete-character')) {
+                    e.target.closest('.character-block').remove();
+                    updatePrompt();
+                }
+                // Delete Dialogue Line
+                if (e.target.closest('.delete-dialogue')) {
+                    e.target.closest('.character-block').remove();
+                    updatePrompt();
+                }
+            });
+
+            document.getElementById('copy-prompt').addEventListener('click', () => {
+                const promptText = document.getElementById('final-prompt');
+                promptText.select();
+                promptText.setSelectionRange(0, 99999); // For mobile devices
+                navigator.clipboard.writeText(promptText.value).then(() => {
+                    alert("Prompt copied to clipboard!");
+                }).catch(err => {
+                    alert("Failed to copy prompt: " + err);
+                });
+            });
+
+            // Initial Setup
+            addScene(); // Start with one scene
+            // Listen for changes in negative prompt to update final prompt
+            document.getElementById('negative-prompt').addEventListener('input', updatePrompt);
+        });
+    </script>
+</body>
+</html>
